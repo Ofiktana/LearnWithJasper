@@ -1,9 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import WelcomeScreen from "../routes/WelcomeScreen";
+import LoginForm from "../routes/LoginForm";
+import RegisterForm from "../routes/RegisterForm";
+import HeaderButton from "./HeaderButton";
+import QuizPanel from "./QuizPanel";
+import SettingsPanel from "../routes/SettingsPanel";
+import LeaderboardPanel from "../routes/LeaderboardPanel";
+import HistoryPanel from "../routes/HistoryPanel";
 
 function AppShell() {
   const navigate = useNavigate();
+  const { isLoggedIn, user, mockUsers, updateUser, handleLogout: authLogout } = useAuth();
 
   // Constants for all possible tables
   const ALL_TABLES = Array.from({ length: 11 }, (_, i) => i + 2);
@@ -29,62 +38,11 @@ function AppShell() {
     lastSessionResult: null, // { score: number, attempted: number, timedOut: boolean }
   };
 
-  // --- Authentication & User State ---
-  const [auth, setAuth] = useState(() => {
-    // Mock User Data with initial history for demonstration
-    const initialMockUsers = [
-      {
-        username: "demo",
-        password: "password",
-        name: "Demo User",
-        scoreHistory: [],
-      },
-      {
-        username: "mathwiz",
-        password: "pass",
-        name: "Math Wiz",
-        scoreHistory: [
-          {
-            score: 10,
-            attempted: 12,
-            date: new Date(Date.now() - 86400000).toLocaleDateString("en-US", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }),
-          },
-        ],
-      },
-      {
-        username: "quickmaths",
-        password: "fast",
-        name: "Quick Maths",
-        scoreHistory: [
-          {
-            score: 25,
-            attempted: 28,
-            date: new Date().toLocaleDateString("en-US", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }),
-          },
-        ],
-      },
-    ];
-
-    return {
-      isLoggedIn: false,
-      user: null, // { username, name, scoreHistory }
-      mockUsers: initialMockUsers, // The mock database of all users
-    };
-  });
-
   // --- Quiz State ---
   const [quizState, setQuizState] = useState(initialQuizState);
 
-  // Combined state for easier reference in handlers
-  const state = { ...auth, ...quizState };
+  // Combined state for easier reference in handlers (only quiz state now)
+  const state = quizState;
 
   // --- Utility Functions ---
 
@@ -137,7 +95,7 @@ function AppShell() {
 
   // --- Leaderboard Calculation (Memoized) ---
   const leaderboard = useMemo(() => {
-    return auth.mockUsers
+    return mockUsers
       .map((user) => {
         const totalScore = user.scoreHistory.reduce(
           (sum, session) => sum + session.score,
@@ -161,13 +119,13 @@ function AppShell() {
         return b.winRate - a.winRate;
       })
       .slice(0, 10);
-  }, [auth.mockUsers]);
+  }, [mockUsers]);
 
   // --- Quiz Session Control Handlers ---
 
   const handleSaveAndShowResults = useCallback(
     (isTimeout = false) => {
-      const { user, score, attempted, sessionMaxQuestions } = state;
+      const { score, attempted, sessionMaxQuestions } = state;
 
       if (!user) return; // Must be logged in
       if (attempted === 0 && !isTimeout) {
@@ -194,16 +152,7 @@ function AppShell() {
         scoreHistory: [newSession, ...user.scoreHistory],
       };
 
-      setAuth((prevAuth) => {
-        const updatedMockUsers = prevAuth.mockUsers.map((u) =>
-          u.username === updatedUser.username ? updatedUser : u
-        );
-        return {
-          ...prevAuth,
-          mockUsers: updatedMockUsers,
-          user: updatedUser,
-        };
-      });
+      updateUser(updatedUser);
 
       // 3. Reset quiz state, but set flags to show results panel
       setQuizState((prevState) => ({
@@ -223,11 +172,12 @@ function AppShell() {
       }));
     },
     [
-      state.user,
+      user,
       state.score,
       state.attempted,
       state.sessionMaxQuestions,
       showMessage,
+      updateUser,
     ]
   );
 
@@ -262,7 +212,7 @@ function AppShell() {
 
   useEffect(() => {
     // Automatic session end handlers
-    if (!state.isLoggedIn || state.isWaitingForNext || state.showResults)
+    if (!isLoggedIn || state.isWaitingForNext || state.showResults)
       return;
 
     // Handle Time Expired
@@ -271,7 +221,7 @@ function AppShell() {
       handleSaveAndShowResults(true); // Call handler to save score and show results
     }
   }, [
-    state.isLoggedIn,
+    isLoggedIn,
     state.timeRemaining,
     state.isTimerRunning,
     state.isWaitingForNext,
@@ -281,47 +231,6 @@ function AppShell() {
 
   // --- Authentication Handlers ---
 
-  const handleLogin = (username, password) => {
-    const foundUser = auth.mockUsers.find(
-      (u) => u.username === username && u.password === password
-    );
-
-    if (foundUser) {
-      setAuth((prevAuth) => ({
-        ...prevAuth,
-        isLoggedIn: true,
-        user: foundUser,
-      }));
-      navigate("/quiz", { replace: true });
-      showMessage(`Welcome back, ${foundUser.name}!`, "text-indigo-400");
-      return true;
-    } else {
-      showMessage("Login failed: Invalid credentials.", "text-red-500");
-      return false;
-    }
-  };
-
-  const handleRegister = (username, password, name) => {
-    if (auth.mockUsers.some((u) => u.username === username)) {
-      showMessage(
-        "Registration failed: Username already exists.",
-        "text-red-500"
-      );
-      return false;
-    }
-
-    const newUser = { username, password, name, scoreHistory: [] };
-    setAuth((prevAuth) => ({
-      ...prevAuth,
-      mockUsers: [...prevAuth.mockUsers, newUser],
-      isLoggedIn: true,
-      user: newUser,
-    }));
-    navigate("/quiz", { replace: true });
-    showMessage(`Registration successful! Welcome, ${name}!`, "text-green-400");
-    return true;
-  };
-
   const handleLogout = () => {
     // Save current session before logging out, if there's data
     if (state.score > 0 || state.attempted > 0) {
@@ -329,7 +238,7 @@ function AppShell() {
     }
 
     setQuizState(initialQuizState); // Reset quiz state upon logout
-    setAuth((prevAuth) => ({ ...prevAuth, isLoggedIn: false, user: null }));
+    authLogout(); // Call auth context logout
     navigate("/", { replace: true }); // Navigate to welcome screen
     showMessage("You have been logged out.", "text-gray-300");
   };
@@ -417,22 +326,18 @@ function AppShell() {
           <div className="flex flex-col">
             <h1
               className="text-2xl font-extrabold text-indigo-400 cursor-pointer"
-              onClick={() => navigate(state.isLoggedIn ? "/quiz" : "/")}
+              onClick={() => navigate(isLoggedIn ? "/quiz" : "/")}
             >
               Learn with Jasper
             </h1>
-            {state.isLoggedIn && state.user && (
+            {isLoggedIn && user && (
               <span className="text-xs text-green-400 mt-1 truncate max-w-[150px] sm:max-w-none">
-                User: {state.user.name}
+                User: {user.name}
               </span>
             )}
           </div>
 
-          <HeaderButton
-            isLoggedIn={state.isLoggedIn}
-            handleLogout={handleLogout}
-            navigate={navigate}
-          />
+          <HeaderButton handleLogout={handleLogout} />
         </div>
 
         {/* Content Area - Router takes over */}
@@ -441,7 +346,7 @@ function AppShell() {
             <Route
               path="/"
               element={
-                state.isLoggedIn ? (
+                isLoggedIn ? (
                   <Navigate to="/quiz" replace />
                 ) : (
                   <WelcomeScreen navigate={navigate} />
@@ -450,29 +355,17 @@ function AppShell() {
             />
             <Route
               path="/login"
-              element={
-                <LoginForm
-                  state={state}
-                  handleLogin={handleLogin}
-                  navigate={navigate}
-                />
-              }
+              element={<LoginForm />}
             />
             <Route
               path="/register"
-              element={
-                <RegisterForm
-                  state={state}
-                  handleRegister={handleRegister}
-                  navigate={navigate}
-                />
-              }
+              element={<RegisterForm />}
             />
             {/* Protected Routes */}
             <Route
               path="/quiz"
               element={
-                state.isLoggedIn ? (
+                isLoggedIn ? (
                   <QuizPanel
                     state={state}
                     generateProblem={generateProblem}
@@ -490,7 +383,7 @@ function AppShell() {
             <Route
               path="/settings"
               element={
-                state.isLoggedIn ? (
+                isLoggedIn ? (
                   <SettingsPanel
                     state={state}
                     setQuizState={setQuizState}
@@ -506,10 +399,10 @@ function AppShell() {
             <Route
               path="/leaderboard"
               element={
-                state.isLoggedIn ? (
+                isLoggedIn ? (
                   <LeaderboardPanel
                     leaderboard={leaderboard}
-                    user={state.user}
+                    user={user}
                   />
                 ) : (
                   <Navigate to="/login" replace />
@@ -519,8 +412,8 @@ function AppShell() {
             <Route
               path="/history"
               element={
-                state.isLoggedIn ? (
-                  <HistoryPanel user={state.user} />
+                isLoggedIn ? (
+                  <HistoryPanel user={user} />
                 ) : (
                   <Navigate to="/login" replace />
                 )

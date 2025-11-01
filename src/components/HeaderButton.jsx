@@ -1,7 +1,10 @@
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
-const HeaderButton = ({ isLoggedIn, handleLogout, navigate }) => {
+const HeaderButton = ({ handleLogout }) => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { isLoggedIn } = useAuth();
     const currentPath = location.pathname.split('/')[1];
 
     if (!isLoggedIn) return null;

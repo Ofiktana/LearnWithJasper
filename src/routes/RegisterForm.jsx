@@ -1,13 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
-const RegisterForm = ({ state, handleRegister, navigate }) => {
+const RegisterForm = () => {
+    const navigate = useNavigate();
+    const { handleRegister: authHandleRegister, isLoggedIn } = useAuth();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
+    const [message, setMessage] = useState('');
+    const [messageColor, setMessageColor] = useState('text-gray-300');
+
+    // Redirect if already logged in
+    useEffect(() => {
+        if (isLoggedIn) {
+            navigate('/quiz', { replace: true });
+        }
+    }, [isLoggedIn, navigate]);
 
     const onRegisterSubmit = (e) => {
         e.preventDefault();
-        handleRegister(username, password, name);
+        const success = authHandleRegister(
+            username,
+            password,
+            name,
+            (user) => {
+                // onSuccess callback
+                setMessage(`Registration successful! Welcome, ${name}!`);
+                setMessageColor('text-green-400');
+                navigate('/quiz', { replace: true });
+            },
+            (errorMessage) => {
+                // onError callback
+                setMessage(errorMessage);
+                setMessageColor('text-red-500');
+            }
+        );
     };
 
     return (
@@ -48,7 +76,7 @@ const RegisterForm = ({ state, handleRegister, navigate }) => {
                     Go to Login
                 </button>
             </div>
-            <div className={`text-center font-bold text-md min-h-[1.5rem] ${state.messageColor}`}>{state.message}</div>
+            <div className={`text-center font-bold text-md min-h-[1.5rem] ${messageColor}`}>{message}</div>
         </div>
     );
 };
