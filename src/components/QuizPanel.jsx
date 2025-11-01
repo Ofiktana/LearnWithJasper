@@ -123,18 +123,18 @@ const QuizPanel = () => {
                 {quizKeys.map((item, index) => {
                     const isClear = item.key === 'CLEAR';
                     const isSubmit = item.key === 'SUBMIT';
-                    const isZero = item.key === 0;
+                    const isZero = item.key === '0';
 
                     let classes = "keypad-button rounded-xl p-4 text-2xl transition duration-150";
                     let action = null;
 
                     if (isClear) {
-                        classes += " bg-red-600 hover:bg-red-500 text-white text-xl";
+                        classes += " bg-red-600 hover:bg-red-500 text-white text-xl flex items-center justify-center";
                         action = handleClear;
                     } else if (isSubmit) {
                         classes += " bg-indigo-600 hover:bg-indigo-500 text-white row-span-2 flex items-center justify-center";
                         action = handleSubmit;
-                    } else if (typeof key === 'number') {
+                    } else if (typeof item.value === 'number') {
                          classes += " bg-gray-600 hover:bg-gray-500 text-white";
                          action = () => handleDigit(item.value);
                     }
