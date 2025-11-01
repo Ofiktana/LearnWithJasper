@@ -1,4 +1,7 @@
-const LeaderboardPanel = ({ leaderboard, user }) => {
+import { useQuiz } from '../contexts/QuizContext';
+
+const LeaderboardPanel = () => {
+    const { leaderboard, user } = useQuiz();
     return (
         <div className="space-y-4 text-white">
             <h2 className="text-2xl font-bold text-indigo-300 text-center border-b border-gray-700 pb-2">Top 10 Leaderboard</h2>

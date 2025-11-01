@@ -1,4 +1,7 @@
-const HistoryPanel = ({ user }) => {
+import { useAuth } from '../contexts/AuthContext';
+
+const HistoryPanel = () => {
+    const { user } = useAuth();
     const history = user?.scoreHistory || [];
     const totalScore = history.reduce((sum, s) => sum + s.score, 0);
     const totalAttempted = history.reduce((sum, s) => sum + s.attempted, 0);

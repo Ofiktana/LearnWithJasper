@@ -7,7 +7,9 @@ const RegisterForm = () => {
     const { handleRegister: authHandleRegister, isLoggedIn } = useAuth();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [name, setName] = useState('');
+    const [birthday, setBirthday] = useState('');
     const [message, setMessage] = useState('');
     const [messageColor, setMessageColor] = useState('text-gray-300');
 
@@ -20,10 +22,19 @@ const RegisterForm = () => {
 
     const onRegisterSubmit = (e) => {
         e.preventDefault();
-        const success = authHandleRegister(
+        
+        // Validate password match
+        if (password !== confirmPassword) {
+            setMessage('Passwords do not match. Please try again.');
+            setMessageColor('text-red-500');
+            return;
+        }
+        
+        authHandleRegister(
             username,
             password,
             name,
+            birthday,
             (user) => {
                 // onSuccess callback
                 setMessage(`Registration successful! Welcome, ${name}!`);
@@ -66,6 +77,27 @@ const RegisterForm = () => {
                     className="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     required
                 />
+                <input
+                    type="password"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    required
+                />
+                <div>
+                    <label htmlFor="birthday" className="block text-sm font-medium text-gray-300 mb-2">
+                        Birthday
+                    </label>
+                    <input
+                        id="birthday"
+                        type="date"
+                        value={birthday}
+                        onChange={(e) => setBirthday(e.target.value)}
+                        className="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        required
+                    />
+                </div>
                 <button type="submit" className="w-full py-3 bg-green-600 hover:bg-green-500 rounded-xl font-bold transition duration-150 shadow-md">
                     Register & Login
                 </button>

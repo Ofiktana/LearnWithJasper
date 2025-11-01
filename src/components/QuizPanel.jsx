@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import QuizResultsPanel from './QuizResultsPanel';
 import { formatTime } from '../utils/helperFunctions';
+import { useQuiz } from '../contexts/QuizContext';
 
-const QuizPanel = ({ state, generateProblem, handleDigit, handleClear, handleSubmit, handleSaveAndShowResults, startNewQuiz }) => {
+const QuizPanel = () => {
+    const { state, generateProblem, handleDigit, handleClear, handleSubmit, handleSaveAndShowResults, startNewQuiz } = useQuiz();
 
     // HOOK 1 (Keyboard Handler) - MOVED TO TOP (UNCONDITIONAL)
     useEffect(() => {

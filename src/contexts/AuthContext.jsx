@@ -71,14 +71,14 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
-  const handleRegister = useCallback((username, password, name, onSuccess, onError) => {
+  const handleRegister = useCallback((username, password, name, birthday, onSuccess, onError) => {
     setAuth((prevAuth) => {
       if (prevAuth.mockUsers.some((u) => u.username === username)) {
         onError?.("Registration failed: Username already exists.");
         return prevAuth;
       }
 
-      const newUser = { username, password, name, scoreHistory: [] };
+      const newUser = { username, password, name, birthday, scoreHistory: [] };
       onSuccess?.(newUser);
       return {
         ...prevAuth,

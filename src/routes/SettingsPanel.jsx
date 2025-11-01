@@ -1,4 +1,9 @@
-const SettingsPanel = ({ state, setQuizState, showMessage, generateProblem, navigate }) => {
+import { useNavigate } from 'react-router-dom';
+import { useQuiz } from '../contexts/QuizContext';
+
+const SettingsPanel = () => {
+    const navigate = useNavigate();
+    const { state, setQuizState, showMessage, generateProblem } = useQuiz();
 
     const ALL_TABLES = Array.from({ length: 11 }, (_, i) => i + 2); // [2, 3, ..., 12]
 
