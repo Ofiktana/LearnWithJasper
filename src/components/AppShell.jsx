@@ -30,13 +30,13 @@ function AppShellContent({ children }) {
       >
         {/* Header */}
         <div className="p-4 bg-gray-700 flex justify-between items-center border-b border-gray-700">
-          <div className="flex flex-col">
-            <h1
-              className="text-2xl font-extrabold text-indigo-400 cursor-pointer"
+          <div className="flex flex-col rounded-full">
+            <img
+              src="/LWJ.png"
+              alt="Learn with Jasper"
+              className="h-12 w-12 cursor-pointer rounded-full hover:opacity-80 transition-opacity"
               onClick={() => navigate(isLoggedIn ? "/quiz" : "/")}
-            >
-              Learn with Jasper
-            </h1>
+            />
             {isLoggedIn && user && (
               <span className="text-xs text-green-400 mt-1 truncate max-w-[150px] sm:max-w-none">
                 User: {user.name}
