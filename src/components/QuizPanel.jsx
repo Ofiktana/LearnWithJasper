@@ -2,9 +2,28 @@ import { useEffect } from 'react';
 import QuizResultsPanel from './QuizResultsPanel';
 import { formatTime } from '../utils/helperFunctions';
 import { useQuiz } from '../contexts/QuizContext';
+import { RxEnter } from "react-icons/rx";
+import { BsCCircle } from "react-icons/bs";
 
 const QuizPanel = () => {
     const { state, generateProblem, handleDigit, handleClear, handleSubmit, handleSaveAndShowResults, startNewQuiz } = useQuiz();
+
+    // Quiz Panel Displays
+
+    const quizKeys = [
+        { key: '7', value: 7 },
+        { key: '8', value: 8 },
+        { key: '9', value: 9 },
+        { key: 'CLEAR', value: <BsCCircle /> },
+        { key: '4', value: 4 },
+        { key: '5', value: 5 },
+        { key: '6', value: 6 },
+        { key: 'SUBMIT', value: <RxEnter /> },
+        { key: '1', value: 1 },
+        { key: '2', value: 2 },
+        { key: '3', value: 3 },
+        { key: '0', value: 0 },
+    ]
 
     // HOOK 1 (Keyboard Handler) - MOVED TO TOP (UNCONDITIONAL)
     useEffect(() => {
@@ -101,10 +120,10 @@ const QuizPanel = () => {
             {/* Calculator Keypad */}
             <div id="keypad" className="grid grid-cols-4 gap-3 pt-4">
 
-                {[7, 8, 9, 'CLEAR', 4, 5, 6, 'SUBMIT', 1, 2, 3, 0].map((key, index) => {
-                    const isClear = key === 'CLEAR';
-                    const isSubmit = key === 'SUBMIT';
-                    const isZero = key === 0;
+                {quizKeys.map((item, index) => {
+                    const isClear = item.key === 'CLEAR';
+                    const isSubmit = item.key === 'SUBMIT';
+                    const isZero = item.key === 0;
 
                     let classes = "keypad-button rounded-xl p-4 text-2xl transition duration-150";
                     let action = null;
@@ -117,7 +136,7 @@ const QuizPanel = () => {
                         action = handleSubmit;
                     } else if (typeof key === 'number') {
                          classes += " bg-gray-600 hover:bg-gray-500 text-white";
-                         action = () => handleDigit(key);
+                         action = () => handleDigit(item.value);
                     }
                     if (isZero) {
                         classes += " col-span-3";
@@ -125,11 +144,11 @@ const QuizPanel = () => {
 
                     const isDisabled = state.isWaitingForNext || isSessionOver;
 
-                    if (index > 7 && isSubmit) return null;
+                        if (index > 7 && item.key === 'SUBMIT') return null;
 
                     return (
-                        <button key={key} className={classes} onClick={action} disabled={isDisabled}>
-                            {key}
+                        <button key={item.key} className={classes} onClick={action} disabled={isDisabled}>
+                            {item.value}
                         </button>
                     );
                 })}
