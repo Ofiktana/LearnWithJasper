@@ -1,0 +1,55 @@
+<div id="content-area" className="p-6">
+  <Routes>
+      <Route path="/" element={
+          state.isLoggedIn ?
+              <Navigate to="/quiz" replace /> :
+              <WelcomeScreen navigate={navigate} />
+      } />
+      <Route path="/login" element={<LoginForm state={state} handleLogin={handleLogin} navigate={navigate} />} />
+      <Route path="/register" element={<RegisterForm state={state} handleRegister={handleRegister} navigate={navigate} />} />
+      {/* Protected Routes */}
+      <Route
+          path="/quiz"
+          element={state.isLoggedIn ?
+              <QuizPanel
+                  state={state}
+                  generateProblem={generateProblem}
+                  handleDigit={handleDigit}
+                  handleClear={handleClear}
+                  handleSubmit={handleSubmit}
+                  handleSaveAndShowResults={handleSaveAndShowResults}
+                  startNewQuiz={startNewQuiz}
+              /> :
+              <Navigate to="/login" replace />
+          }
+      />
+      <Route
+          path="/settings"
+          element={state.isLoggedIn ?
+              <SettingsPanel
+                  state={state}
+                  setQuizState={setQuizState}
+                  showMessage={showMessage}
+                  generateProblem={generateProblem}
+                  navigate={navigate}
+              /> :
+              <Navigate to="/login" replace />
+          }
+      />
+        <Route
+          path="/leaderboard"
+          element={state.isLoggedIn ?
+              <LeaderboardPanel leaderboard={leaderboard} user={state.user} /> :
+              <Navigate to="/login" replace />
+          }
+      />
+        <Route
+          path="/history"
+          element={state.isLoggedIn ?
+              <HistoryPanel user={state.user} /> :
+              <Navigate to="/login" replace />
+          }
+      />
+        <Route path="*" element={<div className="text-white text-center p-8">404 - Not Found</div>} />
+  </Routes>
+</div>
