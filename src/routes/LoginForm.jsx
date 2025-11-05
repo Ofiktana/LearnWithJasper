@@ -13,7 +13,7 @@ const LoginForm = () => {
     // Redirect if already logged in
     useEffect(() => {
         if (isLoggedIn) {
-            navigate('/quiz', { replace: true });
+            navigate('/settings', { replace: true });
         }
     }, [isLoggedIn, navigate]);
 
@@ -26,7 +26,11 @@ const LoginForm = () => {
                 // onSuccess callback
                 setMessage(`Welcome back, ${user.name}!`);
                 setMessageColor('text-indigo-400');
-                navigate('/quiz', { replace: true });
+                // Initialize tables in localStorage if not already set (default to [2])
+                if (!localStorage.getItem('quizTables')) {
+                    localStorage.setItem('quizTables', JSON.stringify([2]));
+                }
+                navigate('/settings', { replace: true });
             },
             (errorMessage) => {
                 // onError callback

@@ -90,6 +90,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   const handleLogout = useCallback(() => {
+    // Clear quiz tables from localStorage on logout
+    // This ensures new users start with default [2] table selection
+    localStorage.removeItem('quizTables');
+    
     setAuth((prevAuth) => ({
       ...prevAuth,
       isLoggedIn: false,

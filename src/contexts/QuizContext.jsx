@@ -7,9 +7,34 @@ export const QuizContext = createContext(null);
 // Constants for all possible tables
 const ALL_TABLES = Array.from({ length: 11 }, (_, i) => i + 2);
 
-// Initial state for a fresh quiz session
+// Helper function to get tables from localStorage
+const getTablesFromStorage = () => {
+  try {
+    const stored = localStorage.getItem('quizTables');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (error) {
+    console.error('Error reading tables from localStorage:', error);
+  }
+  // Default to [2] if nothing in storage
+  return [2];
+};
+
+// Helper function to save tables to localStorage
+const saveTablesToStorage = (tables) => {
+  try {
+    localStorage.setItem('quizTables', JSON.stringify(tables));
+  } catch (error) {
+    console.error('Error saving tables to localStorage:', error);
+  }
+};
+
+// Initial state for a fresh quiz session (tables removed, will be read from localStorage)
 const initialQuizState = {
-  tables: ALL_TABLES,
   score: 0,
   attempted: 0,
   sessionMaxQuestions: 10, // Maximum questions per session
@@ -33,7 +58,11 @@ export function QuizProvider({ children }) {
   const { isLoggedIn, user, mockUsers, updateUser } = useAuth();
 
   // --- Quiz State ---
-  const [quizState, setQuizState] = useState(initialQuizState);
+  // Initialize tables from localStorage, default to [2] if not found
+  const [quizState, setQuizState] = useState(() => ({
+    ...initialQuizState,
+    tables: getTablesFromStorage(),
+  }));
 
   // Combined state for easier reference in handlers
   const state = quizState;
@@ -50,7 +79,10 @@ export function QuizProvider({ children }) {
 
   const generateProblem = useCallback(() => {
     setQuizState((prevState) => {
-      if (prevState.tables.length === 0) {
+      // Always read tables from localStorage to ensure we have the latest selection
+      const tables = getTablesFromStorage();
+      
+      if (tables.length === 0) {
         showMessage(
           "Please select at least one table to start!",
           "text-yellow-400"
@@ -59,12 +91,16 @@ export function QuizProvider({ children }) {
         return prevState;
       }
 
-      const index1 = Math.floor(Math.random() * prevState.tables.length);
-      const m1 = prevState.tables[index1];
+      // Randomly select one multiplier from the settings array (selected tables)
+      const index1 = Math.floor(Math.random() * tables.length);
+      const m1 = tables[index1];
+      
+      // Randomly select the other multiplier between 1 and 12
       const m2 = Math.floor(Math.random() * 12) + 1;
 
       return {
         ...prevState,
+        tables, // Ensure tables in state match localStorage
         multiplier1: m1,
         multiplier2: m2,
         correctAnswer: m1 * m2,
@@ -80,16 +116,25 @@ export function QuizProvider({ children }) {
 
   // Function to fully reset state and start a new quiz
   const startNewQuiz = useCallback(() => {
-    setQuizState((prevState) => ({
-      ...initialQuizState,
-      tables: prevState.tables,
-    }));
+    setQuizState((prevState) => {
+      const tables = getTablesFromStorage(); // Read from localStorage
+      return {
+        ...initialQuizState,
+        tables,
+      };
+    });
     generateProblem();
   }, [generateProblem]);
 
   // Function to fully reset quiz state (useful for logout)
   const resetQuiz = useCallback(() => {
-    setQuizState(initialQuizState);
+    setQuizState(() => {
+      const tables = getTablesFromStorage(); // Read from localStorage
+      return {
+        ...initialQuizState,
+        tables,
+      };
+    });
   }, []);
 
   // --- Leaderboard Calculation (Memoized) ---
@@ -154,21 +199,24 @@ export function QuizProvider({ children }) {
       updateUser(updatedUser);
 
       // 3. Reset quiz state, but set flags to show results panel
-      setQuizState((prevState) => ({
-        ...initialQuizState, // Reset score, attempted, time, etc.
-        tables: prevState.tables, // Keep selected tables
-        isTimerRunning: false, // Timer is definitely off
-        multiplier1: null, // Clear problem
+      setQuizState(() => {
+        const tables = getTablesFromStorage(); // Read from localStorage
+        return {
+          ...initialQuizState, // Reset score, attempted, time, etc.
+          tables, // Keep selected tables from localStorage
+          isTimerRunning: false, // Timer is definitely off
+          multiplier1: null, // Clear problem
 
-        // Show results screen
-        showResults: true,
-        lastSessionResult: { score, attempted, timedOut: isTimeout },
+          // Show results screen
+          showResults: true,
+          lastSessionResult: { score, attempted, timedOut: isTimeout },
 
-        message: isTimeout
-          ? "Time's up! Check your results."
-          : "Quiz finished! Review your performance.",
-        messageColor: isTimeout ? "text-red-500" : "text-green-400",
-      }));
+          message: isTimeout
+            ? "Time's up! Check your results."
+            : "Quiz finished! Review your performance.",
+          messageColor: isTimeout ? "text-red-500" : "text-green-400",
+        };
+      });
     },
     [
       user,

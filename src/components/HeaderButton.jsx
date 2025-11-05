@@ -1,13 +1,18 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useQuiz } from '../contexts/QuizContext';
 
 const HeaderButton = ({ handleLogout }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { isLoggedIn } = useAuth();
+    const { state } = useQuiz();
     const currentPath = location.pathname.split('/')[1];
 
     if (!isLoggedIn) return null;
+
+    // Check if quiz session is active (quiz has started but not showing results)
+    const isQuizActive = (state.attempted > 0 || state.isTimerRunning || state.multiplier1 !== null) && !state.showResults;
 
     const navItems = [
         { path: 'quiz', icon: (
@@ -26,18 +31,28 @@ const HeaderButton = ({ handleLogout }) => {
 
     return (
         <div className="flex items-center space-x-3">
-            {navItems.map(item => (
-                <button
-                    key={item.path}
-                    onClick={() => navigate(item.navigateTo)}
-                    className={`p-2 rounded-full transition duration-150 focus:outline-none ${
-                        currentPath === item.path ? 'text-indigo-400 bg-gray-700' : 'text-gray-300 hover:text-indigo-400'
-                    }`}
-                    aria-label={item.label}
-                >
-                    {item.icon}
-                </button>
-            ))}
+            {navItems.map(item => {
+                // Disable settings button during active quiz session
+                const isDisabled = item.path === 'settings' && isQuizActive;
+                return (
+                    <button
+                        key={item.path}
+                        onClick={() => !isDisabled && navigate(item.navigateTo)}
+                        disabled={isDisabled}
+                        className={`p-2 rounded-full transition duration-150 focus:outline-none ${
+                            isDisabled 
+                                ? 'text-gray-600 cursor-not-allowed opacity-50' 
+                                : currentPath === item.path 
+                                    ? 'text-indigo-400 bg-gray-700' 
+                                    : 'text-gray-300 hover:text-indigo-400'
+                        }`}
+                        aria-label={item.label}
+                        title={isDisabled ? 'Settings unavailable during active quiz session' : item.label}
+                    >
+                        {item.icon}
+                    </button>
+                );
+            })}
             <button
                 onClick={handleLogout}
                 className="text-red-400 hover:text-red-300 p-2 text-sm font-semibold rounded-lg transition duration-150 focus:outline-none"

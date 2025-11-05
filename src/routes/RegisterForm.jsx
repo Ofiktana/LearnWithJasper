@@ -17,7 +17,7 @@ const RegisterForm = () => {
     // Redirect if already logged in
     useEffect(() => {
         if (isLoggedIn) {
-            navigate('/quiz', { replace: true });
+            navigate('/settings', { replace: true });
         }
     }, [isLoggedIn, navigate]);
 
@@ -40,7 +40,11 @@ const RegisterForm = () => {
                 // onSuccess callback
                 setMessage(`Registration successful! Welcome, ${name}!`);
                 setMessageColor('text-green-400');
-                navigate('/quiz', { replace: true });
+                // Initialize tables in localStorage if not already set (default to [2])
+                if (!localStorage.getItem('quizTables')) {
+                    localStorage.setItem('quizTables', JSON.stringify([2]));
+                }
+                navigate('/settings', { replace: true });
             },
             (errorMessage) => {
                 // onError callback

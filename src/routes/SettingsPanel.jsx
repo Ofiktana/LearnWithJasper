@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useQuiz } from '../contexts/QuizContext';
 
 const SettingsPanel = () => {
@@ -7,7 +8,34 @@ const SettingsPanel = () => {
 
     const ALL_TABLES = Array.from({ length: 11 }, (_, i) => i + 2); // [2, 3, ..., 12]
 
+    // Sync state with localStorage on mount
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem('quizTables');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    // Only update if different from current state
+                    if (JSON.stringify(parsed) !== JSON.stringify(state.tables)) {
+                        setQuizState(prevState => ({ ...prevState, tables: parsed }));
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error syncing tables from localStorage:', error);
+        }
+    }, []); // Only run on mount
+
+    // Check if quiz session is active (quiz has started but not showing results)
+    const isQuizActive = (state.attempted > 0 || state.isTimerRunning || state.multiplier1 !== null) && !state.showResults;
+
     const toggleTable = (tableNumber) => {
+        // Prevent changes during active quiz session
+        if (isQuizActive) {
+            showMessage("Cannot change settings during an active quiz session!", 'text-red-400');
+            return;
+        }
+
         setQuizState(prevState => {
             const index = prevState.tables.indexOf(tableNumber);
             const newTables = [...prevState.tables];
@@ -23,6 +51,10 @@ const SettingsPanel = () => {
                 newTables.push(tableNumber);
             }
             newTables.sort((a, b) => a - b);
+            
+            // Save to localStorage
+            localStorage.setItem('quizTables', JSON.stringify(newTables));
+            
             return { ...prevState, tables: newTables };
         });
     };
@@ -30,14 +62,24 @@ const SettingsPanel = () => {
     return (
         <div className="text-white space-y-4">
             <h2 className="text-xl font-bold text-indigo-300 border-b border-gray-700 pb-2">Select Times Tables (2-12)</h2>
+            {isQuizActive && (
+                <div className="bg-yellow-900/50 border border-yellow-600 rounded-lg p-3 text-yellow-200 text-sm mb-4">
+                    Settings are locked during an active quiz session. Please finish or end the current session to change settings.
+                </div>
+            )}
             <div className="grid grid-cols-4 gap-3">
                 {ALL_TABLES.map(table => (
                     <button
                         key={table}
                         onClick={() => toggleTable(table)}
+                        disabled={isQuizActive}
                         className={`p-3 rounded-lg font-bold text-white transition duration-150
-                            ${state.tables.includes(table) ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-gray-600 hover:bg-gray-500'}`
-                        }
+                            ${isQuizActive 
+                                ? 'bg-gray-700 cursor-not-allowed opacity-50' 
+                                : state.tables.includes(table) 
+                                    ? 'bg-indigo-600 hover:bg-indigo-500' 
+                                    : 'bg-gray-600 hover:bg-gray-500'
+                            }`}
                     >
                         × {table}
                     </button>
@@ -45,10 +87,24 @@ const SettingsPanel = () => {
             </div>
             <div className="text-sm text-gray-400 pt-4">You must select at least one table to start the quiz.</div>
             <button
-                onClick={() => { navigate('/quiz'); generateProblem(); }}
-                className="w-full mt-4 py-3 bg-indigo-700 hover:bg-indigo-600 rounded-lg font-bold transition duration-150"
+                onClick={() => {
+                    // Ensure we have at least one table selected before starting
+                    if (state.tables.length === 0) {
+                        showMessage("Please select at least one table to start!", 'text-yellow-400');
+                        return;
+                    }
+                    // Generate problem first to ensure it uses current tables state
+                    generateProblem();
+                    navigate('/quiz');
+                }}
+                disabled={isQuizActive}
+                className={`w-full mt-4 py-3 rounded-lg font-bold transition duration-150 ${
+                    isQuizActive 
+                        ? 'bg-gray-700 cursor-not-allowed opacity-50' 
+                        : 'bg-indigo-700 hover:bg-indigo-600'
+                }`}
             >
-                Start Quiz
+                {isQuizActive ? 'Quiz Session Active' : 'Start Quiz'}
             </button>
         </div>
     );
