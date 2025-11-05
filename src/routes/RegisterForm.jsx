@@ -9,6 +9,7 @@ const RegisterForm = () => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
     const [birthday, setBirthday] = useState('');
     const [message, setMessage] = useState('');
     const [messageColor, setMessageColor] = useState('text-gray-300');
@@ -66,6 +67,14 @@ const RegisterForm = () => {
                     placeholder="Username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
+                    className="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    required
+                />
+                <input
+                    type="email"
+                    placeholder="Email Address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     required
                 />
